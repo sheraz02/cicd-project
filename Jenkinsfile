@@ -1,4 +1,4 @@
-public {
+pipeline {
     agent Any
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
