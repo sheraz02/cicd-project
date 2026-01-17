@@ -1,0 +1,25 @@
+{
+  "name": "devops-project",
+  "version": "1.0.0",
+  "description": "complete devops project",
+  "homepage": "https://github.com/sheraz02/cicd-project#readme",
+  "bugs": {
+    "url": "https://github.com/sheraz02/cicd-project/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sheraz02/cicd-project.git"
+  },
+  "license": "ISC",
+  "author": "Sheraz Ahmad",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "test"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

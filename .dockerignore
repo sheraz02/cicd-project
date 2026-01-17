@@ -1,0 +1,32 @@
+# Node.js
+node_modules
+npm-debug.log
+yarn.lock
+
+# Git
+.git
+.gitignore
+
+# Terraform
+terraform/
+*.tf
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+
+# Jenkins
+Jenkinsfile
+jenkins/
+jenkinsfile
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
