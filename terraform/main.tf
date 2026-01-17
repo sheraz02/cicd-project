@@ -82,6 +82,14 @@ resource "aws_instance" "app_server" {
   vpc_security_group_ids = [aws_security_group.app-sg.id]
   key_name = var.key_name
 
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo apt update -y
+              sudo apt install docker -y
+              sudo systemctl start docker
+              usermod -aG docker ec2-user
+              EOF
+
   tags = {
     Name = "devops-app-server"
   }

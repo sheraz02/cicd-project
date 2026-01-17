@@ -85,6 +85,44 @@ pipeline {
             }
         }
     }
+
+    stage('Deploy Docker Image to EC2'){
+        steps{
+            script{
+                echo "Fetching EC2 public IP from Terraform output..."
+
+                dir('terraform'){
+                    sh'''
+                    terraform output -raw ec2_public_ip > ec2_ip.txt
+                    '''
+                }
+                def EC2_IP = readFile('terraform/ec2_ip.txt').trim()
+                echo "Deploying to EC2 instance at ${EC2_IP}..."
+
+                withCredentials([
+                    sshUserPrivateKey(
+                        credentialsId: 'ec2-ssh-key',
+                        keyFileVariable: 'SSH_KEY'
+                    ),
+                    usernamePassword(
+                        credentialsId: 'DOCKERHUB_CREDENTIALS',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ec2-user@${EC2_IP} << EOF
+                    docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                    docker pull ${DOCKER_IMAGE}:latest
+                    docker stop app || true
+                    docker rm app || true
+                    docker run -d --name app -p 80:3000 ${DOCKER_IMAGE}:latest
+                EOF
+                """
+                }
+            }
+        }
+    }
 }
 
 
