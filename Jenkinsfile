@@ -4,23 +4,13 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = 'dockerhub-creds'
         DOCKER_IMAGE = "sheraz028/devops-project-v1"
-        AWS_CREDENTIALS = 'aws-creds'  // Only works if AWS plugin is installed
+        AWS_CREDENTIALS = 'aws-creds'
         TF_WORKSPACE = 'devops-tf'
         TF_PLUGIN_CACHE_DIR = '/data/terraform-plugin-cache'
     }
 
     stages {
-        stage('Check Tools') {
-            steps {
-                sh '''
-                node -v
-                npm -v
-                docker --version
-                terraform -v
-                aws --version
-                '''
-            }
-        }
+
         stage('Checkout') {
             steps {
                 echo 'Cloning repository...'
@@ -53,11 +43,13 @@ pipeline {
             steps {
                 script {
                     echo "Logging in to Docker Hub and pushing image..."
-                    withCredentials([usernamePassword(
-                        credentialsId: DOCKERHUB_CREDENTIALS, 
-                        usernameVariable: 'DOCKER_USER', 
-                        passwordVariable: 'DOCKER_PASS')]) {
-                        
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: DOCKERHUB_CREDENTIALS,
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )
+                    ]) {
                         sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                         sh "docker push $DOCKER_IMAGE:latest"
                     }
@@ -66,65 +58,63 @@ pipeline {
         }
 
         stage('Terraform Init & Apply') {
-    steps {
-        echo "Deploying infrastructure using Terraform..."
-        withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: AWS_CREDENTIALS]]) {
-            dir('terraform') {
-                // Set required Terraform variables
-                withEnv([
-                    "TF_VAR_key_name=aws_ec2_terraform",      // Replace with your AWS key pair name
-                    "TF_PLUGIN_CACHE_DIR=/data/terraform-plugin-cache"
-                ]) {
-                    // Initialize Terraform
-                    sh 'terraform init -input=false'
-                    
-                    // Plan and apply
-                    sh 'terraform plan -out=tfplan -input=false'
-                    sh 'terraform apply -input=false tfplan'
-                }
-            }
-        }
-    }
-
-    stage('Deploy Docker Image to EC2'){
-        steps{
-            script{
-                echo "Fetching EC2 public IP from Terraform output..."
-
-                dir('terraform'){
-                    sh'''
-                    terraform output -raw ec2_public_ip > ec2_ip.txt
-                    '''
-                }
-                def EC2_IP = readFile('terraform/ec2_ip.txt').trim()
-                echo "Deploying to EC2 instance at ${EC2_IP}..."
-
+            steps {
+                echo "Deploying infrastructure using Terraform..."
                 withCredentials([
-                    sshUserPrivateKey(
-                        credentialsId: 'ec2-ssh-key',
-                        keyFileVariable: 'SSH_KEY'
-                    ),
-                    usernamePassword(
-                        credentialsId: 'DOCKERHUB_CREDENTIALS',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
+                    [$class: "AmazonWebServicesCredentialsBinding", credentialsId: AWS_CREDENTIALS]
                 ]) {
-                    sh """
-                    ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ec2-user@${EC2_IP} << EOF
-                    docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                    docker pull ${DOCKER_IMAGE}:latest
-                    docker stop app || true
-                    docker rm app || true
-                    docker run -d --name app -p 80:3000 ${DOCKER_IMAGE}:latest
-                EOF
-                """
+                    dir('terraform') {
+                        withEnv([
+                            "TF_VAR_key_name=aws_ec2_terraform",
+                            "TF_PLUGIN_CACHE_DIR=/data/terraform-plugin-cache"
+                        ]) {
+                            sh 'terraform init -input=false'
+                            sh 'terraform plan -out=tfplan -input=false'
+                            sh 'terraform apply -input=false tfplan'
+                        }
+                    }
                 }
             }
         }
-    }
-}
 
+        stage('Deploy Docker Image to EC2') {
+            steps {
+                script {
+                    echo "Fetching EC2 public IP from Terraform output..."
+
+                    dir('terraform') {
+                        sh '''
+                        terraform output -raw ec2_public_ip > ec2_ip.txt
+                        '''
+                    }
+
+                    def EC2_IP = readFile('terraform/ec2_ip.txt').trim()
+                    echo "Deploying to EC2 instance at ${EC2_IP}..."
+
+                    withCredentials([
+                        sshUserPrivateKey(
+                            credentialsId: 'ec2-ssh-key',
+                            keyFileVariable: 'SSH_KEY'
+                        ),
+                        usernamePassword(
+                            credentialsId: 'DOCKERHUB_CREDENTIALS',
+                            usernameVariable: 'DOCKER_USER',
+                            passwordVariable: 'DOCKER_PASS'
+                        )
+                    ]) {
+                        sh """
+                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ec2-user@${EC2_IP} << EOF
+                        docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                        docker pull ${DOCKER_IMAGE}:latest
+                        docker stop app || true
+                        docker rm app || true
+                        docker run -d --name app -p 80:3000 ${DOCKER_IMAGE}:latest
+                        EOF
+                        """
+                    }
+                }
+            }
+        }
 
         stage('Cleanup') {
             steps {
