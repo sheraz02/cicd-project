@@ -103,7 +103,7 @@ pipeline {
                         )
                     ]) {
                         sh """
-                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ec2-user@${EC2_IP} << EOF
+                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ubuntu@${EC2_IP} << EOF
                         docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
                         docker pull ${DOCKER_IMAGE}:latest
                         docker stop app || true
