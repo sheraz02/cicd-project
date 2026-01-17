@@ -6,6 +6,7 @@ pipeline {
         DOCKER_IMAGE = "sheraz028/devops-project-v1"
         AWS_CREDENTIALS = 'aws-creds'  // Only works if AWS plugin is installed
         TF_WORKSPACE = 'devops-tf'
+        TF_PLUGIN_CACHE_DIR = '/data/terraform-plugin-cache'
     }
 
     stages {
