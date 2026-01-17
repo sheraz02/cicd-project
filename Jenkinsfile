@@ -108,7 +108,7 @@ pipeline {
                         docker pull $DOCKER_IMAGE:latest
                         docker stop app || true
                         docker rm app || true
-                        docker run -d --name app -p 3000:80 $DOCKER_IMAGE:latest
+                        docker run -d --name app -p 3000:3000 $DOCKER_IMAGE:latest
                         '
                         """
 
