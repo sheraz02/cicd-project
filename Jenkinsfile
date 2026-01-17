@@ -103,13 +103,14 @@ pipeline {
                         )
                     ]) {
                         sh """
-                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ubuntu@${EC2_IP} << EOF
-                        docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                        docker pull ${DOCKER_IMAGE}:latest
-                        docker stop app || true
-                        docker rm app || true
-                        docker run -d --name app -p 80:3000 ${DOCKER_IMAGE}:latest
+                        ssh -i $SSH_KEY ubuntu@${EC2_IP} << EOF
+                        sudo docker login -u $DOCKER_USER --password-stdin
+                        sudo docker pull $DOCKER_IMAGE:latest
+                        sudo docker stop app || true
+                        sudo docker rm app || true
+                        sudo docker run -d --name app -p 80:3000 $DOCKER_IMAGE:latest
                         EOF
+
                         """
                     }
                 }

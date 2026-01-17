@@ -83,28 +83,28 @@ resource "aws_instance" "app_server" {
   key_name = var.key_name
 
   user_data = <<-EOF
-#!/bin/bash
-# Install prerequisites
-apt update -y
-apt install -y apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release
+                  #!/bin/bash
+                  # Install prerequisites
+                  sudo apt update -y
+                  sudo apt install -y apt-transport-https ca-certificates curl software-properties-common gnupg lsb-release
 
-# Add Docker’s official GPG key
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                  # Add Docker’s official GPG key
+                  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-# Add Docker repo
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+                  # Add Docker repo
+                  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# Install Docker
-apt update -y
-apt install -y docker-ce docker-ce-cli containerd.io
+                  # Install Docker
+                  sudo apt update -y
+                  sudo apt install -y docker-ce docker-ce-cli containerd.io
 
-# Start Docker
-systemctl start docker
-systemctl enable docker
+                  # Start & enable Docker
+                  sudo systemctl start docker
+                  sudo systemctl enable docker
 
-# Add ubuntu user to docker group
-usermod -aG docker ubuntu
-EOF
+                  # Add ubuntu user to Docker group
+                  sudo usermod -aG docker ubuntu
+                  EOF
 
   tags = {
     Name = "devops-app-server"
