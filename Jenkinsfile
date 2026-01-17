@@ -81,41 +81,29 @@ pipeline {
             steps {
                 script {
                     echo "Fetching EC2 public IP from Terraform output..."
-
-                    dir('terraform') {
-                        sh '''
-                        terraform output -raw ec2_public_ip > ec2_ip.txt
-                        '''
-                    }
-
-                    def EC2_IP = readFile('terraform/ec2_ip.txt').trim()
-                    echo "Deploying to EC2 instance at ${EC2_IP}..."
-
-                    withCredentials([
-                        sshUserPrivateKey(
-                            credentialsId: 'ec2-ssh-key',
-                            keyFileVariable: 'SSH_KEY'
-                        ),
-                        usernamePassword(
-                            credentialsId: DOCKERHUB_CREDENTIALS,
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )
-                    ]) {
+                    
+                    // Get EC2 public IP from Terraform
+                    def ec2_ip = sh(script: "terraform output -raw ec2_public_ip", returnStdout: true).trim()
+                    echo "Deploying to EC2 instance at ${ec2_ip}..."
+                    
+                    withCredentials([sshUserPrivateKey(credentialsId: 'SSH_KEY', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
+                                    string(credentialsId: 'DOCKER_PASS', variable: 'DOCKER_PASS')]) {
+                        
+                        // Deploy commands on EC2
                         sh """
-                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ubuntu@${EC2_IP} << EOF
-                        echo $DOCKER_PASS | sudo docker login -u $DOCKER_USER --password-stdin
-                        sudo docker pull $DOCKER_IMAGE:latest
-                        sudo docker stop app || true
-                        sudo docker rm app || true
-                        sudo docker run -d --name app -p 80:3000 $DOCKER_IMAGE:latest
-                        EOF
-
+                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ubuntu@${ec2_ip} '
+                        echo "\$DOCKER_PASS" | docker login -u sheraz028 --password-stdin
+                        docker pull sheraz028/devops-project-v1:latest
+                        docker stop app || true
+                        docker rm app || true
+                        docker run -d --name app -p 80:3000 sheraz028/devops-project-v1:latest
+                        '
                         """
                     }
                 }
             }
-        }
+}
+
 
         stage('Cleanup') {
             steps {
