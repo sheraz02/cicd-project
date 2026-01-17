@@ -65,7 +65,7 @@ pipeline {
                 ]) {
                     dir('terraform') {
                         withEnv([
-                            "TF_VAR_key_name=aws_ec2_terraform",
+                            "TF_VAR_key_name=instance-ssh-key",
                             "TF_PLUGIN_CACHE_DIR=/data/terraform-plugin-cache"
                         ]) {
                             sh 'terraform init -input=false'
