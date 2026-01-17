@@ -66,17 +66,27 @@ pipeline {
         }
 
         stage('Terraform Init & Apply') {
-            steps {
-                echo "Deploying infrastructure using Terraform..."
-                withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: AWS_CREDENTIALS]]) {
-                    dir('terraform') {
-                        sh 'terraform init'
-                        sh 'terraform plan -out=tfplan -input=false'
-                        sh 'terraform apply -input=false tfplan'
-                    }
+    steps {
+        echo "Deploying infrastructure using Terraform..."
+        withCredentials([[$class: "AmazonWebServicesCredentialsBinding", credentialsId: AWS_CREDENTIALS]]) {
+            dir('terraform') {
+                // Set required Terraform variables
+                withEnv([
+                    "TF_VAR_key_name=aws_ec2_terraform",      // Replace with your AWS key pair name
+                    "TF_PLUGIN_CACHE_DIR=/data/terraform-plugin-cache"
+                ]) {
+                    // Initialize Terraform
+                    sh 'terraform init -input=false'
+                    
+                    // Plan and apply
+                    sh 'terraform plan -out=tfplan -input=false'
+                    sh 'terraform apply -input=false tfplan'
                 }
             }
         }
+    }
+}
+
 
         stage('Cleanup') {
             steps {
