@@ -104,7 +104,7 @@ pipeline {
                     ]) {
                         sh """
                         ssh -o StrictHostKeyChecking=no -i \$SSH_KEY ubuntu@${EC2_IP} << EOF
-                        sudo docker login -u $DOCKER_USER --password-stdin
+                        echo $DOCKER_PASS | sudo docker login -u $DOCKER_USER --password-stdin
                         sudo docker pull $DOCKER_IMAGE:latest
                         sudo docker stop app || true
                         sudo docker rm app || true
