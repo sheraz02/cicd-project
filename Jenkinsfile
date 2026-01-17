@@ -9,7 +9,17 @@ pipeline {
     }
 
     stages {
-
+        stage('Check Tools') {
+            steps {
+                sh '''
+                node -v
+                npm -v
+                docker --version
+                terraform -v
+                aws --version
+                '''
+            }
+        }
         stage('Checkout') {
             steps {
                 echo 'Cloning repository...'
